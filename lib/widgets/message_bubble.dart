@@ -16,13 +16,10 @@ class MessageBubble extends StatelessWidget {
         margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
         padding: EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: message.isUserMessage ? Colors.blue[100] : Colors.grey[200],
+          color: message.isUserMessage ? Colors.blue[300] : Colors.grey[100],
           borderRadius: BorderRadius.circular(18),
         ),
-        child: Text(
-          message.text,
-          style: TextStyle(fontSize: 24),
-        )
+        child: Text(message.text, style: TextStyle(fontSize: 24)),
       ),
     );
   }

@@ -1,11 +1,13 @@
 class ChatMessage {
   final String text;
-  final bool isUserMessage;
+  final String role; // ← NEW: "user" or "model"
   final DateTime timestamp;
 
   ChatMessage({
     required this.text,
-    required this.isUserMessage,
+    required this.role,
     required this.timestamp,
   });
+
+  bool get isUserMessage => role == "user";
 }

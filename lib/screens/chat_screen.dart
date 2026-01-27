@@ -1,27 +1,33 @@
 import 'package:flutter/material.dart';
-import 'package:chat_ui_lab/models/chat_message.dart';
-import 'package:chat_ui_lab/widgets/message_bubble.dart';
-import 'package:chat_ui_lab/widgets/input_bar.dart';
-
-import 'package:chat_ui_lab/services/gemini_service.dart';
+import '../models/chat_message.dart';
+import '../widgets/message_bubble.dart';
+import '../widgets/input_bar.dart';
+import '../services/gemini_service.dart'; // ← NEW
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
 
   @override
-  _ChatScreenState createState() => _ChatScreenState();
+  State<ChatScreen> createState() => _ChatScreenState();
 }
 
 class _ChatScreenState extends State<ChatScreen> {
   final List<ChatMessage> messages = [];
   final ScrollController scrollController = ScrollController();
+  bool _isLoading = false;
 
-  void addMessage(String text, bool isUser) {
+  @override
+  void dispose() {
+    scrollController.dispose();
+    super.dispose();
+  }
+
+  void addMessage(String text, String role) {
     setState(() {
       messages.add(
         ChatMessage(
           text: text,
-          isUserMessage: isUser,
+          role: role, // "user" or "model"
           timestamp: DateTime.now(),
         ),
       );
@@ -31,64 +37,88 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      scrollController.animateTo(
-        scrollController.position.maxScrollExtent,
-        duration: Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
+      if (scrollController.hasClients) {
+        scrollController.animateTo(
+          scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
     });
   }
 
+  // 🔥 MULTI-TURN HANDLER
   Future<void> handleSend(String text) async {
-    addMessage(text, true); // User message
+    // Add user message
+    addMessage(text, "user");
 
-    // 🔥 LOADING
-    addMessage('🤖 AI Thinking...', false);
+    setState(() => _isLoading = true);
 
     try {
-      // 🔥 REAL GEMINI CALL
-      final aiResponse = await GeminiService.sendMessage(text);
+      // 🔥 SEND ENTIRE HISTORY TO GEMINI
+      final aiResponse = await GeminiService.sendMultiTurnMessage(
+        messages, // ← Entire conversation!
+      );
 
-      // Remove loading message
-      setState(() {
-        messages.removeLast(); // Remove "AI Thinking..."
-      });
-
-      addMessage(aiResponse, false); // Real response
+      // Add AI response
+      addMessage(aiResponse, "model"); // ← role: "model"
     } catch (e) {
-      setState(() {
-        messages.removeLast(); // Remove loading
-      });
-      addMessage('❌ Error: $e', false);
+      addMessage('❌ Error: $e', "model");
+    } finally {
+      setState(() => _isLoading = false);
     }
-  }
-
-  @override
-  void dispose() {
-    scrollController.dispose();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Chat UI ✅')),
+      appBar: AppBar(
+        title: const Text('🤖 AI Chat - Multi-Turn Week 4'),
+        backgroundColor: Colors.teal[600],
+      ),
       body: Column(
         children: [
+          // Messages
           Expanded(
             child: messages.isEmpty
-                ? Center(child: Text('Send message to start!'))
+                ? const Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.chat, size: 100, color: Colors.grey),
+                        SizedBox(height: 16),
+                        Text('Start chatting!'),
+                        Text(
+                          'Multi-turn means Gemini remembers context 🧠',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  )
                 : ListView.builder(
                     controller: scrollController,
-                    reverse: true,
                     itemCount: messages.length,
                     itemBuilder: (context, index) {
-                      return MessageBubble(
-                        message: messages[messages.length - 1 - index],
-                      );
+                      final msg = messages[index];
+                      return MessageBubble(message: msg);
                     },
                   ),
           ),
+
+          // Loading
+          if (_isLoading)
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(width: 12),
+                  Text('🤖 Thinking with context...'),
+                ],
+              ),
+            ),
+
+          // Input
           InputBar(onSendMessage: handleSend),
         ],
       ),
