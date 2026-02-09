@@ -1,7 +1,7 @@
-import 'package:chat_ui_lab/services/gemini_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
+import 'package:ai_gemini_chat/services/gemini_service.dart';
 
 class SettingsDialog extends StatelessWidget {
   final TextEditingController apiKeyController;

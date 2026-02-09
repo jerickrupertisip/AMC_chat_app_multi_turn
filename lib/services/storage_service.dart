@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:chat_ui_lab/models/chat_session.dart';
+import 'package:ai_gemini_chat/models/chat_session.dart';
 
 class StorageService {
   static const String _chatSessionsKey = 'chat_history_sessions';

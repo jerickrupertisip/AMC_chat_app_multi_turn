@@ -1,11 +1,7 @@
-import "package:chat_ui_lab/screens/chat_screen.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:flutter_dotenv/flutter_dotenv.dart";
-import "package:chat_ui_lab/models/chat_message.dart";
-import "package:chat_ui_lab/widgets/message_bubble.dart";
-import "package:chat_ui_lab/widgets/input_bar.dart";
-import "package:chat_ui_lab/theme/tokyo_night.dart";
+import "package:ai_gemini_chat/screens/chat_screen.dart";
 import "package:flutter_gemini/flutter_gemini.dart";
 
 Future<void> main() async {

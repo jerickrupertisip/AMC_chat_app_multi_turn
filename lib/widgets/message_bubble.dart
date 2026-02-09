@@ -1,6 +1,6 @@
 import "package:flutter/material.dart";
-import "package:chat_ui_lab/models/chat_message.dart";
 import "package:flutter_gemini/flutter_gemini.dart";
+import "package:ai_gemini_chat/models/chat_message.dart";
 
 class MessageBubble extends StatelessWidget {
   final ChatMessage message;

@@ -1,7 +1,7 @@
-import "package:chat_ui_lab/models/persona.dart";
-import "package:chat_ui_lab/services/gemini_service.dart";
 import "package:flutter/cupertino.dart";
 import "package:flutter/material.dart";
+import "package:ai_gemini_chat/models/persona.dart";
+import "package:ai_gemini_chat/services/gemini_service.dart";
 
 class EmptyChat extends StatelessWidget {
   final Function(int?) onPersonaSelected;

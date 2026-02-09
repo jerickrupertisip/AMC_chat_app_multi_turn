@@ -1,16 +1,16 @@
-import "package:chat_ui_lab/models/persona.dart";
-import "package:chat_ui_lab/models/chat_session.dart";
-import "package:chat_ui_lab/services/storage_service.dart";
-import "package:chat_ui_lab/widgets/chat_session_entry.dart";
-import "package:chat_ui_lab/widgets/empty_chat.dart";
-import "package:chat_ui_lab/widgets/settings_dialog.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
-import "package:chat_ui_lab/models/chat_message.dart";
-import "package:chat_ui_lab/widgets/message_bubble.dart";
-import "package:chat_ui_lab/widgets/input_bar.dart";
-import "package:chat_ui_lab/services/gemini_service.dart";
 import "package:flutter_gemini/flutter_gemini.dart";
+import "package:ai_gemini_chat/models/chat_message.dart";
+import "package:ai_gemini_chat/widgets/message_bubble.dart";
+import "package:ai_gemini_chat/widgets/input_bar.dart";
+import "package:ai_gemini_chat/services/gemini_service.dart";
+import "package:ai_gemini_chat/models/persona.dart";
+import "package:ai_gemini_chat/models/chat_session.dart";
+import "package:ai_gemini_chat/services/storage_service.dart";
+import "package:ai_gemini_chat/widgets/chat_session_entry.dart";
+import "package:ai_gemini_chat/widgets/empty_chat.dart";
+import "package:ai_gemini_chat/widgets/settings_dialog.dart";
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});

@@ -1,6 +1,6 @@
-import 'package:chat_ui_lab/models/chat_session.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:ai_gemini_chat/models/chat_session.dart';
 
 class ChatSessionEntry extends StatefulWidget {
   final Function(int, int) onClick;

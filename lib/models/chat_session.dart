@@ -1,5 +1,5 @@
-import "package:chat_ui_lab/models/chat_message.dart";
-import "package:chat_ui_lab/services/gemini_service.dart";
+import "package:ai_gemini_chat/models/chat_message.dart";
+import "package:ai_gemini_chat/services/gemini_service.dart";
 import "package:flutter_gemini/flutter_gemini.dart";
 
 class ChatSession {
