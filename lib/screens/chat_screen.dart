@@ -121,6 +121,10 @@ class _ChatScreenState extends State<ChatScreen> {
     selectedPersonaID = personaID;
   }
 
+  void onPersonaSelected(int? personaID) {
+    selectedPersonaID = personaID ?? selectedPersonaID;
+  }
+
   @override
   Widget build(BuildContext context) {
     ChatSession? session = activeSession;
@@ -133,7 +137,7 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           Expanded(
             child: session == null
-                ? EmptyChat(onPersonaClicked: handlePersonaClick)
+                ? EmptyChat(onPersonaSelected: onPersonaSelected)
                 : ListView.builder(
                     controller: scrollController,
                     itemCount: session.visibleMessages.length,
@@ -143,8 +147,6 @@ class _ChatScreenState extends State<ChatScreen> {
                     },
                   ),
           ),
-
-          // Loading
           if (_isLoading)
             const Padding(
               padding: EdgeInsets.all(16),
@@ -156,12 +158,9 @@ class _ChatScreenState extends State<ChatScreen> {
                 ],
               ),
             ),
-
           // Input
-          Column(
-            children: [
-              InputBar(onSendMessage: handleSend),
-            ],
+          Row(
+            children: [Expanded(child: InputBar(onSendMessage: handleSend))],
           ),
         ],
       ),
@@ -196,7 +195,6 @@ class _ChatScreenState extends State<ChatScreen> {
                     session_id: sessionID,
                     title: session.title,
                     onClick: (pID, sID) {
-                      print("[$pID][$sID]");
                       setState(() {
                         activePersonaID = pID;
                         activeSessionID = sID;
