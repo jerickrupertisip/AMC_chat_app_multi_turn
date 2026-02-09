@@ -1,5 +1,6 @@
-import "package:chat_ui_lab/models/Persona.dart";
+import "package:chat_ui_lab/models/persona.dart";
 import "package:chat_ui_lab/models/chat_session.dart";
+import "package:chat_ui_lab/services/storage_service.dart";
 import "package:chat_ui_lab/widgets/chat_entry.dart";
 import "package:chat_ui_lab/widgets/empty_chat.dart";
 import "package:flutter/material.dart";
@@ -17,14 +18,13 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  // Map<int, List<ChatSession>> sessions = {
-  //   for (int i = 0; i < GeminiService.personas.length; i++) i: [],
-  // };
   Map<int, List<ChatSession>> sessions = {};
   Map<int, int> sessionsActiveSession = {};
   int activeSessionID = -1;
   int activePersonaID = -1;
   int selectedPersonaID = 0;
+
+  StorageService storageService = StorageService();
 
   List<ChatSession>? get chatSessions => sessions[activePersonaID];
 
@@ -74,8 +74,8 @@ class _ChatScreenState extends State<ChatScreen> {
       activeSessionID = currentLength;
       activePersonaID = selectedPersonaID;
       var session = ChatSession(
-        // title: "Persona [$selectedPersonaID]: Session[$currentLength]",
-        title: "",
+        title: "Persona: $activePersonaID, Session: $activeSessionID",
+        // title: "",
         messages: [],
         personaID: selectedPersonaID,
       );
@@ -98,51 +98,53 @@ class _ChatScreenState extends State<ChatScreen> {
           scrollToBottom();
         });
 
-        if (session.title.isEmpty) {
-          var titleResponse = await Gemini.instance.prompt(
-            parts: [
-              TextPart(GeminiService.chatTitleInstruction),
-              TextPart(session.personaInstruction),
-              TextPart(userPrompt),
-            ],
-          );
-          setState(() {
-            Content? content = titleResponse?.content;
-            if (content != null) {
-              var title =
-                  (content.parts?.map((part) {
-                            if (part is TextPart) {
-                              return part.text;
-                            }
-                            return "";
-                          }).join() ??
-                          "")
-                      .trim();
-              if (title.isEmpty) {
-                session.title = "New Chat";
-              } else {
-                session.title = title;
-              }
-            }
-          });
-        }
+        // if (session.title.isEmpty) {
+        //   var titleResponse = await Gemini.instance.prompt(
+        //     parts: [
+        //       TextPart(GeminiService.chatTitleInstruction),
+        //       TextPart(session.personaInstruction),
+        //       TextPart(userPrompt),
+        //     ],
+        //   );
+        //   setState(() {
+        //     Content? content = titleResponse?.content;
+        //     if (content != null) {
+        //       var title =
+        //           (content.parts?.map((part) {
+        //                     if (part is TextPart) {
+        //                       return part.text;
+        //                     }
+        //                     return "";
+        //                   }).join() ??
+        //                   "")
+        //               .trim();
+        //       if (title.isEmpty) {
+        //         session.title = "New Chat";
+        //       } else {
+        //         session.title = title;
+        //       }
+        //     }
+        //   });
+        // }
 
-        var response = await Gemini.instance.chat(session.messages);
-
-        setState(() {
-          Content? content = response?.content;
-          if (content != null) {
-            session.addAIMessage(content);
-          }
-        });
-        // session.addAIMessage(
-        //   Content(role: "model", parts: [TextPart("AI Response")]),
-        // );
+        // var response = await Gemini.instance.chat(session.messages);
+        //
+        // setState(() {
+        //   Content? content = response?.content;
+        //   if (content != null) {
+        //     session.addAIMessage(content);
+        //   }
+        // });
+        session.addAIMessage(Content(
+          parts: [TextPart("AI Response")],
+          role: "model",
+        ));
       } catch (e) {
         session.addErrorMessage("❌ Error: $e");
       } finally {
         session.removeMessageInstruction();
         setState(() => _isLoading = false);
+        storageService.saveSessions(sessions);
       }
     }
   }
@@ -153,6 +155,19 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void onPersonaSelected(int? personaID) {
     selectedPersonaID = personaID ?? selectedPersonaID;
+  }
+
+  void _initData() async {
+    var sessions = await storageService.loadSessions();
+    setState(() {
+      this.sessions = sessions;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _initData();
   }
 
   @override

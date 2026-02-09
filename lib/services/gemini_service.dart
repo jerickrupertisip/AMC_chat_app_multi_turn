@@ -1,5 +1,5 @@
 import "dart:convert";
-import "package:chat_ui_lab/models/Persona.dart";
+import "package:chat_ui_lab/models/persona.dart";
 import "package:flutter_dotenv/flutter_dotenv.dart";
 import "package:flutter_gemini/flutter_gemini.dart";
 import "package:http/http.dart" as http;

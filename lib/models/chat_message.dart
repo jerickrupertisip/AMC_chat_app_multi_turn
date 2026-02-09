@@ -27,6 +27,30 @@ class ChatMessage extends Content {
 
   bool get isUserMessage => role == "user";
 
+  Map<String, dynamic> toJson() {
+    return {
+      'role': role,
+      'isError': isError,
+      'isInstruction': isInstruction,
+      // Map only the TextParts to a list of strings
+      'parts': parts?.whereType<TextPart>().map((p) => p.text).toList() ?? [],
+    };
+  }
+
+  factory ChatMessage.fromJson(Map<String, dynamic> json) {
+    return ChatMessage.fromParts(
+      role: json['role'] ?? 'user',
+      isError: json['isError'] ?? false,
+      isInstruction: json['isInstruction'] ?? false,
+      // Reconstruct the parts list by wrapping each string back into a TextPart
+      parts:
+          (json['parts'] as List?)
+              ?.map((text) => TextPart(text.toString()))
+              .toList() ??
+          [],
+    );
+  }
+
   void append(Content message) {
     Part? part = parts?.first;
     if (part is TextPart) {

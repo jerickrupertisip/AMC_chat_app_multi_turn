@@ -9,8 +9,8 @@ class ChatSession {
 
   String get personaInstruction =>
       GeminiService.personas[personaID].instruction;
-  String get personaName =>
-      GeminiService.personas[personaID].name;
+
+  String get personaName => GeminiService.personas[personaID].name;
 
   List<ChatMessage> get visibleMessages => messages.where((m) {
     return !m.isInstruction;
@@ -21,6 +21,26 @@ class ChatSession {
     required this.messages,
     required this.personaID,
   });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'title': title,
+      'personaID': personaID,
+      'messages': messages.map((m) => m.toJson()).toList(),
+    };
+  }
+
+  factory ChatSession.fromJson(Map<String, dynamic> json) {
+    return ChatSession(
+      title: json['title'] ?? '',
+      personaID: json['personaID'] ?? 0,
+      messages:
+          (json['messages'] as List?)
+              ?.map((m) => ChatMessage.fromJson(m))
+              .toList() ??
+          [],
+    );
+  }
 
   void removeErrorMessages() {
     messages.removeWhere((element) {

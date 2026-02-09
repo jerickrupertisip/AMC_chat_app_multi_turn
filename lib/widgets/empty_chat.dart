@@ -1,4 +1,4 @@
-import "package:chat_ui_lab/models/Persona.dart";
+import "package:chat_ui_lab/models/persona.dart";
 import "package:chat_ui_lab/services/gemini_service.dart";
 import "package:flutter/cupertino.dart";
 import "package:flutter/material.dart";
