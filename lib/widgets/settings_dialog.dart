@@ -6,11 +6,13 @@ import 'package:flutter_gemini/flutter_gemini.dart';
 class SettingsDialog extends StatelessWidget {
   final TextEditingController apiKeyController;
   final TextEditingController geminiModelController;
+  final Function() onClearChats;
 
   const SettingsDialog({
     super.key,
     required this.apiKeyController,
     required this.geminiModelController,
+    required this.onClearChats,
   });
 
   Row newInputSetting({
@@ -79,6 +81,12 @@ class SettingsDialog extends StatelessWidget {
                       GeminiService.model = geminiModelController.text;
                       Navigator.pop(context);
                     },
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      onClearChats();
+                    },
+                    child: Text("Clear Chats"),
                   ),
                 ],
               ),

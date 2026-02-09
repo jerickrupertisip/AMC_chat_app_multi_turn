@@ -1,9 +1,10 @@
-import 'package:chat_ui_lab/models/chat_message.dart';
-import 'package:chat_ui_lab/services/gemini_service.dart';
-import 'package:flutter_gemini/flutter_gemini.dart';
+import "package:chat_ui_lab/models/chat_message.dart";
+import "package:chat_ui_lab/services/gemini_service.dart";
+import "package:flutter_gemini/flutter_gemini.dart";
 
 class ChatSession {
   String title;
+  bool generateNewTitle = true;
   final List<ChatMessage> messages;
   final int personaID;
   int sessionID;
@@ -13,12 +14,14 @@ class ChatSession {
 
   String get personaName => GeminiService.personas[personaID].name;
 
+  bool get hasTitle => title.isNotEmpty;
+
   List<ChatMessage> get visibleMessages => messages.where((m) {
     return !m.isInstruction;
   }).toList();
 
   ChatSession({
-    required this.title,
+    this.title = "",
     required this.messages,
     required this.personaID,
     required this.sessionID,
@@ -26,24 +29,25 @@ class ChatSession {
 
   Map<String, dynamic> toSaveJson() {
     return {
-      'title': title,
-      'personaID': personaID,
-      'sessionID': sessionID,
-      'messages': messages.map((m) => m.toSaveJson()).toList(),
+      "title": title,
+      "personaID": personaID,
+      "sessionID": sessionID,
+      "messages": messages.map((m) => m.toSaveJson()).toList(),
     };
   }
 
   factory ChatSession.fromSaveJson(Map<String, dynamic> json) {
-    return ChatSession(
-      title: json['title'] ?? '',
-      personaID: json['personaID'] ?? 0,
-      sessionID: json['sessionID'] ?? 0,
+    var chat = ChatSession(
+      title: json["title"] ?? "",
+      personaID: json["personaID"] ?? 0,
+      sessionID: json["sessionID"] ?? 0,
       messages:
-          (json['messages'] as List?)
+          (json["messages"] as List?)
               ?.map((m) => ChatMessage.fromSaveJson(m))
               .toList() ??
           [],
     );
+    return chat;
   }
 
   void removeErrorMessages() {

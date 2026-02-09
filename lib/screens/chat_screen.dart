@@ -66,6 +66,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void toEmptyChat() {
     activeSessionID = -1;
     activePersonaID = -1;
+    _chatInputController.clear();
   }
 
   ChatSession? newEmptyChat() {
@@ -82,7 +83,6 @@ class _ChatScreenState extends State<ChatScreen> {
       activePersonaID = selectedPersonaID;
       var session = ChatSession(
         // title: "Persona: $activePersonaID, Session: $activeSessionID",
-        title: "",
         messages: [],
         personaID: selectedPersonaID,
         sessionID: currentLength,
@@ -126,7 +126,7 @@ class _ChatScreenState extends State<ChatScreen> {
           _chatInputController.clear();
         });
 
-        if (session.title.isEmpty) {
+        if (session.generateNewTitle) {
           if (kDebugMode) {
             print("Gemini Model (Prompt): ${GeminiService.model}");
           }
@@ -155,6 +155,7 @@ class _ChatScreenState extends State<ChatScreen> {
               } else {
                 session.title = title;
               }
+              session.generateNewTitle = false;
             }
           });
         }
@@ -260,12 +261,22 @@ class _ChatScreenState extends State<ChatScreen> {
       var list = sessions[personaID];
       if (list != null) {
         list.removeAt(sessionID);
+        if (activePersonaID == personaID && activeSessionID == sessionID) {
+          toEmptyChat();
+        }
         if (list.isEmpty) {
           sessions.remove(personaID);
           recalculateSessionIndexes();
           storageService.saveSessions(sessions);
         }
       }
+    });
+  }
+
+  void onClearChats() {
+    setState(() {
+      sessions = {};
+      storageService.clearSessions();
     });
   }
 
@@ -287,7 +298,9 @@ class _ChatScreenState extends State<ChatScreen> {
     ChatSession? session = activeSession;
     return Scaffold(
       appBar: AppBar(
-        title: const Text("🤖 AI Chat - Multi-Turn Week 4"),
+        title: session != null
+            ? Text(session.title)
+            : Text("🤖 AI Gemini Chat with 5 Persona"),
         backgroundColor: Colors.teal[600],
       ),
       body: Column(
@@ -380,6 +393,7 @@ class _ChatScreenState extends State<ChatScreen> {
               SettingsDialog(
                 apiKeyController: _apiKeyController,
                 geminiModelController: _geminiModelInputController,
+                onClearChats: onClearChats,
               ),
             ],
           ),
