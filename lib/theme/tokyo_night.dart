@@ -1,5 +1,3 @@
-// lib/theme/tokyo_night.dart
-
 import 'package:flutter/material.dart';
 
 // Official Tokyonight color palette

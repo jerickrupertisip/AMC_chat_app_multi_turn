@@ -36,6 +36,10 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_dotenv: ^6.0.0
   http: ^1.6.0
+  flutter_gemini:
+    git:
+      url: https://github.com/babakcode/flutter_gemini.git
+      ref: master
 
 dev_dependencies:
   launcher_name: ^1.0.2

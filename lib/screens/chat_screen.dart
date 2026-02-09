@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
-import '../models/chat_message.dart';
-import '../widgets/message_bubble.dart';
-import '../widgets/input_bar.dart';
-import '../services/gemini_service.dart'; // ← NEW
+import "package:flutter/material.dart";
+import "package:chat_ui_lab/models/chat_message.dart";
+import "package:chat_ui_lab/widgets/message_bubble.dart";
+import "package:chat_ui_lab/widgets/input_bar.dart";
+import "package:chat_ui_lab/services/gemini_service.dart";
+import "package:flutter_gemini/flutter_gemini.dart";
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -13,6 +14,12 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final List<ChatMessage> messages = [];
+
+  ChatMessage get aiChatMessage => messages.last;
+
+  List<ChatMessage> get visibleMessages => messages.where((m) {
+    return !m.isInstruction;
+  }).toList();
   final ScrollController scrollController = ScrollController();
   bool _isLoading = false;
 
@@ -22,15 +29,65 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
-  void addMessage(String text, String role) {
+  void removeErrorMessages() {
     setState(() {
-      messages.add(
-        ChatMessage(
-          text: text,
-          role: role, // "user" or "model"
-          timestamp: DateTime.now(),
-        ),
+      messages.removeWhere((element) {
+        return element.isError;
+      });
+    });
+  }
+
+  void addTemporaryMessage(String text, String role) {
+    setState(() {
+      messages.add(ChatMessage(text: text, role: role));
+    });
+    scrollToBottom();
+  }
+
+  void removeMessageInstruction() {
+    setState(() {
+      messages.removeWhere((element) {
+        return element.isInstruction;
+      });
+    });
+  }
+
+  void addAIInstruction() {
+    setState(() {
+      var content = ChatMessage(
+        text: GeminiService.instruction,
+        role: "user",
+        isInstruction: true,
       );
+      messages.add(content);
+    });
+    scrollToBottom();
+  }
+
+  void addUserMessage(String message) {
+    setState(() {
+      var content = ChatMessage(text: message, role: "user");
+      messages.add(content);
+    });
+    scrollToBottom();
+  }
+
+  void addErrorMessage(String message) {
+    setState(() {
+      var content = ChatMessage.fromParts(
+        role: "model",
+        parts: [TextPart(GeminiService.instruction), TextPart(message)],
+        isError: true,
+      );
+      messages.add(content);
+    });
+    scrollToBottom();
+  }
+
+  void addAIMessage(Content content) {
+    setState(() {
+      ChatMessage msg = ChatMessage.fromContent(content: content);
+      messages.add(msg);
     });
     scrollToBottom();
   }
@@ -47,23 +104,22 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  // 🔥 MULTI-TURN HANDLER
-  Future<void> handleSend(String text) async {
-    // Add user message
-    addMessage(text, "user");
-
-    setState(() => _isLoading = true);
-
+  Future<void> handleSend(String user_prompt) async {
     try {
-      // 🔥 SEND ENTIRE HISTORY TO GEMINI
-      final aiResponse = await GeminiService.sendMultiTurnMessage(
-        messages, // ← Entire conversation!
-      );
+      setState(() => _isLoading = true);
 
-      // Add AI response
-      addMessage(aiResponse, "model"); // ← role: "model"
+      removeErrorMessages();
+      addAIInstruction();
+      addUserMessage(user_prompt);
+
+      var v = await Gemini.instance.chat(messages);
+      if (content != null) {
+        addAIMessage(content);
+      }
+
+      removeMessageInstruction();
     } catch (e) {
-      addMessage('❌ Error: $e', "model");
+      addErrorMessage("❌ Error: $e");
     } finally {
       setState(() => _isLoading = false);
     }
@@ -73,12 +129,11 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('🤖 AI Chat - Multi-Turn Week 4'),
+        title: const Text("🤖 AI Chat - Multi-Turn Week 4"),
         backgroundColor: Colors.teal[600],
       ),
       body: Column(
         children: [
-          // Messages
           Expanded(
             child: messages.isEmpty
                 ? const Center(
@@ -87,9 +142,9 @@ class _ChatScreenState extends State<ChatScreen> {
                       children: [
                         Icon(Icons.chat, size: 100, color: Colors.grey),
                         SizedBox(height: 16),
-                        Text('Start chatting!'),
+                        Text("Start chatting!"),
                         Text(
-                          'Multi-turn means Gemini remembers context 🧠',
+                          "Multi-turn means Gemini remembers context 🧠",
                           style: TextStyle(fontSize: 12, color: Colors.grey),
                         ),
                       ],
@@ -97,9 +152,9 @@ class _ChatScreenState extends State<ChatScreen> {
                   )
                 : ListView.builder(
                     controller: scrollController,
-                    itemCount: messages.length,
+                    itemCount: visibleMessages.length,
                     itemBuilder: (context, index) {
-                      final msg = messages[index];
+                      final msg = visibleMessages[index];
                       return MessageBubble(message: msg);
                     },
                   ),
@@ -113,7 +168,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 children: [
                   CircularProgressIndicator(),
                   SizedBox(width: 12),
-                  Text('🤖 Thinking with context...'),
+                  Text("🤖 Thinking with context..."),
                 ],
               ),
             ),

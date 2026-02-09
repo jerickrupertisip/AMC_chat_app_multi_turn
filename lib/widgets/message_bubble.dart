@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 import "package:chat_ui_lab/models/chat_message.dart";
+import "package:flutter_gemini/flutter_gemini.dart";
 
 class MessageBubble extends StatelessWidget {
   final ChatMessage message;
@@ -19,7 +20,15 @@ class MessageBubble extends StatelessWidget {
           color: message.isUserMessage ? Colors.blue[300] : Colors.grey[100],
           borderRadius: BorderRadius.circular(18),
         ),
-        child: Text(message.text, style: TextStyle(fontSize: 24)),
+        child: Column(
+          children: message.parts?.map((toElement) {
+            if (toElement is TextPart) {
+              return Text(toElement.text);
+            } else {
+              return Text("<Non text part>");
+            }
+          }).toList() ?? [Text("None")],
+        ),
       ),
     );
   }

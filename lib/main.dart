@@ -5,9 +5,11 @@ import "package:chat_ui_lab/models/chat_message.dart";
 import "package:chat_ui_lab/widgets/message_bubble.dart";
 import "package:chat_ui_lab/widgets/input_bar.dart";
 import "package:chat_ui_lab/theme/tokyo_night.dart";
+import "package:flutter_gemini/flutter_gemini.dart";
 
 Future<void> main() async {
   await dotenv.load(fileName: ".env");
+  Gemini.init(apiKey: dotenv.env["API_KEY"] ?? "<API_KEY>");
   runApp(ChatApp());
 }
 
