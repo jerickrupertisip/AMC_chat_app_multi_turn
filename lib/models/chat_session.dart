@@ -3,7 +3,7 @@ import 'package:chat_ui_lab/services/gemini_service.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
 
 class ChatSession {
-  final String title;
+  String title;
   final List<ChatMessage> messages;
   final int personaID;
 

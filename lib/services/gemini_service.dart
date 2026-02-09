@@ -13,6 +13,7 @@ class GeminiService {
   static const String apiUrl =
       "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent";
 
+  static const String chatTitleInstruction = """Only generate a 2-4 word title in English based on the user's first message. Use a professional, technical tone. Do not use emojis or generic phrases like 'New Chat'.""";
   static const int defaultPersonaID = 0;
   static const String defaultPersona =
       """You are a Flutter development expert assistant. 
