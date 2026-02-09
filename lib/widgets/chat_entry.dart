@@ -1,29 +1,31 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-class ChatEntry extends StatefulWidget {
-  final Function(int) onClick;
+class ChatSessionEntry extends StatefulWidget {
+  final Function(int, int) onClick;
 
   String title;
+  int persona_id;
   int session_id;
 
-  ChatEntry({
+  ChatSessionEntry({
+    required this.persona_id,
     required this.session_id,
     required this.title,
     required this.onClick,
   });
 
   @override
-  State<ChatEntry> createState() => _ChatEntryState();
+  State<ChatSessionEntry> createState() => _ChatSessionEntryState();
 }
 
-class _ChatEntryState extends State<ChatEntry> {
+class _ChatSessionEntryState extends State<ChatSessionEntry> {
   @override
   Widget build(BuildContext context) {
     return ListTile(
       title: Text(widget.title),
       onTap: () {
-        widget.onClick(widget.session_id);
+        widget.onClick(widget.persona_id, widget.session_id);
       },
     );
   }

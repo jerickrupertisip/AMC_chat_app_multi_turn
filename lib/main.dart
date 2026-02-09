@@ -22,7 +22,7 @@ class ChatApp extends StatelessWidget {
       title: "Chat UI App",
       // theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
       home: ChatScreen(),
-      theme: tokyoNightTheme,
+      // theme: tokyoNightTheme,
       debugShowCheckedModeBanner: false,
     );
   }

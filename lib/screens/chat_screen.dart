@@ -17,12 +17,19 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  List<ChatSession> sessions = [];
+  // Map<int, List<ChatSession>> sessions = {
+  //   for (int i = 0; i < GeminiService.personas.length; i++) i: [],
+  // };
+  Map<int, List<ChatSession>> sessions = {};
+  Map<int, int> sessionsActiveSession = {};
   int activeSessionID = -1;
+  int activePersonaID = -1;
+  int selectedPersonaID = 0;
+
+  List<ChatSession>? get chatSessions => sessions[activePersonaID];
 
   ChatSession? get activeSession =>
-      activeSessionID == -1 ? null : sessions[activeSessionID];
-  int selectedPersonaID = 0;
+      activeSessionID >= 0 ? (chatSessions?[activeSessionID]) : null;
 
   final ScrollController scrollController = ScrollController();
   bool _isLoading = false;
@@ -45,26 +52,48 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  Future<void> handleSend(String user_prompt) async {
-    if (activeSessionID < 0 || sessions.isEmpty) {
-      sessions.add(
-        ChatSession(
-          title: "${sessions.length} Chat [$selectedPersonaID]",
-          messages: [],
-          persona_id: selectedPersonaID,
-        ),
-      );
-      activeSessionID = sessions.length - 1;
+  bool get noActiveChat => activePersonaID == -1 && activeSessionID == -1;
+
+  bool get hasActiveChat => activePersonaID >= 0 && activeSessionID >= 0;
+
+  void toEmptyChat() {
+    activeSessionID = -1;
+    activePersonaID = -1;
+  }
+
+  ChatSession? newEmptyChat() {
+    if (noActiveChat) {
+      if (!sessions.containsKey(selectedPersonaID)) {
+        sessions[selectedPersonaID] = [];
+      }
     }
 
-    ChatSession? session = activeSession;
+    var chatSessions = sessions[selectedPersonaID];
+    if (chatSessions != null) {
+      int currentLength = chatSessions.length;
+      activeSessionID = currentLength;
+      activePersonaID = selectedPersonaID;
+      var session = ChatSession(
+        title: "Persona [$selectedPersonaID]: Session[$currentLength]",
+        messages: [],
+        personaID: selectedPersonaID,
+      );
+      chatSessions.add(session);
+      return session;
+    }
+    return null;
+  }
+
+  Future<void> handleSend(String userPrompt) async {
+    ChatSession? session = hasActiveChat ? activeSession : newEmptyChat();
+
     if (session != null) {
       try {
         setState(() {
           _isLoading = true;
           session.removeErrorMessages();
           session.addAIInstruction();
-          session.addUserMessage(user_prompt);
+          session.addUserMessage(userPrompt);
           scrollToBottom();
         });
 
@@ -76,10 +105,9 @@ class _ChatScreenState extends State<ChatScreen> {
         //     session.addAIMessage(content);
         //   }
         // });
-        session.addAIMessage(Content(
-          role: "model",
-          parts: [TextPart("AI Response")],
-        ));
+        session.addAIMessage(
+          Content(role: "model", parts: [TextPart("AI Response")]),
+        );
       } catch (e) {
         session.addErrorMessage("❌ Error: $e");
       } finally {
@@ -104,7 +132,7 @@ class _ChatScreenState extends State<ChatScreen> {
       body: Column(
         children: [
           Expanded(
-            child: (session == null || session.messages.isEmpty)
+            child: session == null
                 ? EmptyChat(onPersonaClicked: handlePersonaClick)
                 : ListView.builder(
                     controller: scrollController,
@@ -130,7 +158,11 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
 
           // Input
-          InputBar(onSendMessage: handleSend),
+          Column(
+            children: [
+              InputBar(onSendMessage: handleSend),
+            ],
+          ),
         ],
       ),
       drawer: Drawer(
@@ -142,42 +174,38 @@ class _ChatScreenState extends State<ChatScreen> {
               title: Text("New Chat"),
               onTap: () {
                 setState(() {
-                  activeSessionID = -1;
+                  toEmptyChat();
                 });
               },
             ),
             // Padding(padding: EdgeInsets.all(12), child: Text("New Chat", on)),
-            ...GeminiService.personas.asMap().entries.map((value) {
-              int id = value.key;
-              Persona persona = value.value;
-              List<ChatSession> personaSessions = sessions.where((session) {
-                return session.persona_id == id;
-              }).toList();
+            ...sessions.entries.map((value) {
+              int personaID = value.key;
+              List<ChatSession> personaSessions = value.value;
 
               return ExpansionTile(
                 title: Text(
-                  persona.name,
+                  GeminiService.personas[personaID].name,
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 children: personaSessions.asMap().entries.map((value) {
                   int sessionID = value.key;
-                  print("Session ID: $sessionID");
                   ChatSession session = value.value;
-                  return ChatEntry(
+                  return ChatSessionEntry(
+                    persona_id: personaID,
                     session_id: sessionID,
                     title: session.title,
-                    onClick: (id) {
-                      print("clicked Session ID: $id");
-                      if (activeSessionID != id) {
-                        setState(() {
-                          activeSessionID = id;
-                        });
-                      }
+                    onClick: (pID, sID) {
+                      print("[$pID][$sID]");
+                      setState(() {
+                        activePersonaID = pID;
+                        activeSessionID = sID;
+                      });
                     },
                   );
                 }).toList(),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),

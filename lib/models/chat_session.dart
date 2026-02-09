@@ -5,12 +5,12 @@ import 'package:flutter_gemini/flutter_gemini.dart';
 class ChatSession {
   final String title;
   final List<ChatMessage> messages;
-  final int persona_id;
+  final int personaID;
 
   String get personaInstruction =>
-      GeminiService.personas[persona_id].instruction;
+      GeminiService.personas[personaID].instruction;
   String get personaName =>
-      GeminiService.personas[persona_id].name;
+      GeminiService.personas[personaID].name;
 
   List<ChatMessage> get visibleMessages => messages.where((m) {
     return !m.isInstruction;
@@ -19,7 +19,7 @@ class ChatSession {
   ChatSession({
     required this.title,
     required this.messages,
-    required this.persona_id,
+    required this.personaID,
   });
 
   void removeErrorMessages() {
