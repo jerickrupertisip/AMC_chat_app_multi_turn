@@ -1,11 +1,44 @@
+import 'package:chat_ui_lab/services/gemini_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
 
 class SettingsDialog extends StatelessWidget {
   final TextEditingController apiKeyController;
+  final TextEditingController geminiModelController;
 
-  const SettingsDialog({super.key, required this.apiKeyController});
+  const SettingsDialog({
+    super.key,
+    required this.apiKeyController,
+    required this.geminiModelController,
+  });
+
+  Row newInputSetting({
+    required String? labelText,
+    required String hintText,
+    required TextEditingController controller,
+    required Function() onPressed,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 380),
+            child: TextField(
+              controller: controller,
+              decoration: InputDecoration(
+                labelText: labelText,
+                hintText: hintText,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        ElevatedButton(onPressed: onPressed, child: const Text("Apply")),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,33 +54,31 @@ class SettingsDialog extends StatelessWidget {
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(minWidth: 150),
-                          child: TextField(
-                            controller: apiKeyController,
-                            decoration: const InputDecoration(
-                              labelText: "Gemini API Key",
-                              hintText: "Enter your key",
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      ElevatedButton(
-                        onPressed: () {
-                          String apiKey = apiKeyController.text;
-                          if (apiKey.isNotEmpty) {
-                            Gemini.reInitialize(apiKey: apiKey, enableDebugging: kDebugMode);
-                            Navigator.pop(context);
-                          }
-                        },
-                        child: const Text("Apply"),
-                      ),
-                    ],
+                  newInputSetting(
+                    labelText: "Gemini API Key",
+                    hintText: "Enter your key",
+                    controller: apiKeyController,
+                    onPressed: () {
+                      String apiKey = apiKeyController.text;
+                      if (apiKey.isNotEmpty) {
+                        Gemini.reInitialize(
+                          apiKey: apiKey,
+                          enableDebugging: kDebugMode,
+                        );
+                        Navigator.pop(context);
+                      }
+                      Navigator.pop(context);
+                    },
+                  ),
+                  newInputSetting(
+                    labelText:
+                        "Gemini Model Identifier (eg. gemini-2.5-flash-lite)",
+                    hintText: "Model Identifier",
+                    controller: geminiModelController,
+                    onPressed: () {
+                      GeminiService.model = geminiModelController.text;
+                      Navigator.pop(context);
+                    },
                   ),
                 ],
               ),

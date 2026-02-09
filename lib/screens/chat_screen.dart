@@ -4,6 +4,7 @@ import "package:chat_ui_lab/services/storage_service.dart";
 import "package:chat_ui_lab/widgets/chat_session_entry.dart";
 import "package:chat_ui_lab/widgets/empty_chat.dart";
 import "package:chat_ui_lab/widgets/settings_dialog.dart";
+import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:chat_ui_lab/models/chat_message.dart";
 import "package:chat_ui_lab/widgets/message_bubble.dart";
@@ -35,6 +36,9 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController scrollController = ScrollController();
   final TextEditingController _apiKeyController = TextEditingController();
   final TextEditingController _chatInputController = TextEditingController();
+  final TextEditingController _geminiModelInputController =
+      TextEditingController();
+
   bool _isLoading = false;
 
   @override
@@ -123,12 +127,16 @@ class _ChatScreenState extends State<ChatScreen> {
         });
 
         if (session.title.isEmpty) {
+          if (kDebugMode) {
+            print("Gemini Model (Prompt): ${GeminiService.model}");
+          }
           var titleResponse = await Gemini.instance.prompt(
             parts: [
               TextPart(GeminiService.chatTitleInstruction),
               TextPart(session.personaInstruction),
               TextPart(userPrompt),
             ],
+            model: GeminiService.model,
           );
           setState(() {
             Content? content = titleResponse?.content;
@@ -151,7 +159,13 @@ class _ChatScreenState extends State<ChatScreen> {
           });
         }
 
-        var response = await Gemini.instance.chat(session.messages);
+        if (kDebugMode) {
+          print("Gemini Model (Chat): ${GeminiService.model}");
+        }
+        var response = await Gemini.instance.chat(
+          session.messages,
+          modelName: GeminiService.model,
+        );
 
         setState(() {
           Content? content = response?.content;
@@ -363,7 +377,10 @@ class _ChatScreenState extends State<ChatScreen> {
 
               // 3. BOTTOM SECTION (Fixed at the bottom)
               const Divider(),
-              SettingsDialog(apiKeyController: _apiKeyController),
+              SettingsDialog(
+                apiKeyController: _apiKeyController,
+                geminiModelController: _geminiModelInputController,
+              ),
             ],
           ),
         ),
