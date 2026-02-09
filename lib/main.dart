@@ -1,4 +1,5 @@
 import "package:chat_ui_lab/screens/chat_screen.dart";
+import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:flutter_dotenv/flutter_dotenv.dart";
 import "package:chat_ui_lab/models/chat_message.dart";
@@ -8,9 +9,14 @@ import "package:chat_ui_lab/theme/tokyo_night.dart";
 import "package:flutter_gemini/flutter_gemini.dart";
 
 Future<void> main() async {
-  await dotenv.load(fileName: ".env");
-  print("apiKey: ${dotenv.env["API_KEY"]}");
-  Gemini.init(apiKey: dotenv.env["API_KEY"] ?? "<API_KEY>", enableDebugging: true);
+  try {
+    await dotenv.load(fileName: ".env");
+    Gemini.init(apiKey: dotenv.env["API_KEY"] ?? "<API_KEY>", enableDebugging: kDebugMode);
+  } catch (e) {
+    if (kDebugMode) {
+      print("Error: $e");
+    }
+  }
   runApp(ChatApp());
 }
 

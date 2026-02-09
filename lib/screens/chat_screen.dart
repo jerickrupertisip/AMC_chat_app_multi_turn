@@ -3,6 +3,7 @@ import "package:chat_ui_lab/models/chat_session.dart";
 import "package:chat_ui_lab/services/storage_service.dart";
 import "package:chat_ui_lab/widgets/chat_entry.dart";
 import "package:chat_ui_lab/widgets/empty_chat.dart";
+import "package:chat_ui_lab/widgets/settings_dialog.dart";
 import "package:flutter/material.dart";
 import "package:chat_ui_lab/models/chat_message.dart";
 import "package:chat_ui_lab/widgets/message_bubble.dart";
@@ -32,6 +33,8 @@ class _ChatScreenState extends State<ChatScreen> {
       activeSessionID >= 0 ? (chatSessions?[activeSessionID]) : null;
 
   final ScrollController scrollController = ScrollController();
+  final TextEditingController _apiKeyController = TextEditingController();
+  final TextEditingController _chatInputController = TextEditingController();
   bool _isLoading = false;
 
   @override
@@ -74,8 +77,8 @@ class _ChatScreenState extends State<ChatScreen> {
       activeSessionID = currentLength;
       activePersonaID = selectedPersonaID;
       var session = ChatSession(
-        // title: "Persona: $activePersonaID, Session: $activeSessionID",
-        title: "",
+        title: "Persona: $activePersonaID, Session: $activeSessionID",
+        // title: "",
         messages: [],
         personaID: selectedPersonaID,
       );
@@ -83,6 +86,25 @@ class _ChatScreenState extends State<ChatScreen> {
       return session;
     }
     return null;
+  }
+
+  void unsentLastUserMessage() {
+    ChatSession? session = activeSession;
+    if (session != null && session.messages.length >= 2) {
+      int index = session.messages.lastIndexWhere((session) {
+        return session.isUserMessage;
+      });
+      if (index >= 0) {
+        setState(() {
+          var msg = session.messages[index];
+          msg.isError = true;
+          var first = msg.parts?.first;
+          if (first != null && first is TextPart) {
+            _chatInputController.text = first.text;
+          }
+        });
+      }
+    }
   }
 
   Future<void> handleSend(String userPrompt) async {
@@ -135,14 +157,52 @@ class _ChatScreenState extends State<ChatScreen> {
             session.addAIMessage(content);
           }
         });
-        // session.addAIMessage(Content(
-        //   parts: [TextPart("AI Response")],
-        //   role: "model",
-        // ));
+        // session.addAIMessage(
+        //   Content(parts: [TextPart("AI Response")], role: "model"),
+        // );
       } on GeminiException catch (e) {
-        session.addErrorMessage("❌ Error (${e.statusCode}): ${e.message}");
+        int? realStatusCode = e.statusCode;
+        Object? message = e.message;
+
+        if (realStatusCode == -1 && message is String) {
+          // Regex looks for "status code of " followed by digits
+          final match = RegExp(r"status code of (\d+)").firstMatch(message);
+          if (match != null) {
+            realStatusCode = int.parse(match.group(1)!);
+          }
+        }
+
+        switch (realStatusCode) {
+          case 400:
+            session.addErrorMessage(
+              "❌ Invalid Request: Check your parameters or prompt format.",
+            );
+            break;
+          case 401:
+          case 403:
+            session.addErrorMessage(
+              "❌ Unauthorized: Your API Key is likely invalid or expired.",
+            );
+            // Logic to open your Settings dialog automatically could go here
+            break;
+          case 429:
+            session.addErrorMessage(
+              "❌ Rate Limit: You are sending requests too fast. Slow down!",
+            );
+            break;
+          case 500:
+          case 503:
+            session.addErrorMessage(
+              "❌ Server Error: Gemini is currently overloaded or down.",
+            );
+            break;
+          default:
+            session.addErrorMessage("❌ Error ${e.statusCode}: ${e.message}");
+        }
+        unsentLastUserMessage();
       } catch (e) {
         session.addErrorMessage("❌ Error: $e");
+        unsentLastUserMessage();
       } finally {
         session.removeMessageInstruction();
         setState(() => _isLoading = false);
@@ -207,51 +267,75 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           // Input
           Row(
-            children: [Expanded(child: InputBar(onSendMessage: handleSend))],
+            children: [
+              Expanded(
+                child: InputBar(
+                  onSendMessage: handleSend,
+                  textController: _chatInputController,
+                ),
+              ),
+            ],
           ),
         ],
       ),
       drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.all(12),
-          children: [
-            ListTile(
-              leading: Icon(Icons.add),
-              title: Text("New Chat"),
-              onTap: () {
-                setState(() {
-                  toEmptyChat();
-                });
-              },
-            ),
-            // Padding(padding: EdgeInsets.all(12), child: Text("New Chat", on)),
-            ...sessions.entries.map((value) {
-              int personaID = value.key;
-              List<ChatSession> personaSessions = value.value;
+        child: SafeArea(
+          // Ensures content doesn't hit status bars or notches
+          child: Column(
+            children: [
+              // 1. TOP SECTION (Fixed)
+              ListTile(
+                leading: const Icon(Icons.add),
+                title: const Text("New Chat"),
+                onTap: () {
+                  setState(() => toEmptyChat());
+                  Navigator.pop(context);
+                },
+              ),
+              const Divider(),
 
-              return ExpansionTile(
-                title: Text(
-                  GeminiService.personas[personaID].name,
-                  style: TextStyle(fontWeight: FontWeight.bold),
+              // 2. MIDDLE SECTION (Scrollable)
+              Expanded(
+                child: ListView(
+                  padding: EdgeInsets.zero,
+                  children: [
+                    ...sessions.entries.map((entry) {
+                      int personaID = entry.key;
+                      List<ChatSession> personaSessions = entry.value;
+                      return ExpansionTile(
+                        title: Text(
+                          GeminiService.personas[personaID].name,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        children: personaSessions.asMap().entries.map((
+                          sessionEntry,
+                        ) {
+                          int sessionID = sessionEntry.key;
+                          ChatSession session = sessionEntry.value;
+                          return ChatSessionEntry(
+                            persona_id: personaID,
+                            session_id: sessionID,
+                            title: session.title,
+                            onClick: (pID, sID) {
+                              setState(() {
+                                activePersonaID = pID;
+                                activeSessionID = sID;
+                              });
+                              Navigator.pop(context);
+                            },
+                          );
+                        }).toList(),
+                      );
+                    }).toList(),
+                  ],
                 ),
-                children: personaSessions.asMap().entries.map((value) {
-                  int sessionID = value.key;
-                  ChatSession session = value.value;
-                  return ChatSessionEntry(
-                    persona_id: personaID,
-                    session_id: sessionID,
-                    title: session.title,
-                    onClick: (pID, sID) {
-                      setState(() {
-                        activePersonaID = pID;
-                        activeSessionID = sID;
-                      });
-                    },
-                  );
-                }).toList(),
-              );
-            }),
-          ],
+              ),
+
+              // 3. BOTTOM SECTION (Fixed at the bottom)
+              const Divider(),
+              SettingsDialog(apiKeyController: _apiKeyController),
+            ],
+          ),
         ),
       ),
     );

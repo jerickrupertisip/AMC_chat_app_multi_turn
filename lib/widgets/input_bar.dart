@@ -2,27 +2,30 @@ import "package:flutter/material.dart";
 
 class InputBar extends StatefulWidget {
   final Function(String) onSendMessage;
+  final TextEditingController textController;
 
-  const InputBar({Key? key, required this.onSendMessage}) : super(key: key);
+  const InputBar({
+    Key? key,
+    required this.onSendMessage,
+    required this.textController,
+  }) : super(key: key);
 
   @override
   State<InputBar> createState() => _InputBarState();
 }
 
 class _InputBarState extends State<InputBar> {
-  final TextEditingController _textController = TextEditingController();
-
   @override
   void dispose() {
-    _textController.dispose();
+    widget.textController.dispose();
     super.dispose();
   }
 
   void _sendMessage() {
-    String text = _textController.text.trim();
+    String text = widget.textController.text.trim();
     if (text.isNotEmpty) {
       widget.onSendMessage(text);
-      _textController.clear();
+      widget.textController.clear();
     }
   }
 
@@ -34,7 +37,7 @@ class _InputBarState extends State<InputBar> {
         children: [
           Expanded(
             child: TextField(
-              controller: _textController,
+              controller: widget.textController,
               decoration: InputDecoration(
                 hintText: "Type Your Message...",
                 border: OutlineInputBorder(
