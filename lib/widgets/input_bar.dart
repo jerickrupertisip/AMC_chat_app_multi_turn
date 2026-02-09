@@ -25,7 +25,6 @@ class _InputBarState extends State<InputBar> {
     String text = widget.textController.text.trim();
     if (text.isNotEmpty) {
       widget.onSendMessage(text);
-      widget.textController.clear();
     }
   }
 

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 class ChatSessionEntry extends StatefulWidget {
   final Function(int, int) onClick;
+  final Function(int, int) onDelete;
 
   String title;
   int persona_id;
@@ -13,6 +14,7 @@ class ChatSessionEntry extends StatefulWidget {
     required this.session_id,
     required this.title,
     required this.onClick,
+    required this.onDelete,
   });
 
   @override
@@ -27,6 +29,13 @@ class _ChatSessionEntryState extends State<ChatSessionEntry> {
       onTap: () {
         widget.onClick(widget.persona_id, widget.session_id);
       },
+      // The action goes here
+      trailing: IconButton(
+        icon: const Icon(Icons.delete, color: Colors.redAccent),
+        onPressed: () {
+          widget.onDelete(widget.persona_id, widget.session_id);
+        },
+      ),
     );
   }
 }

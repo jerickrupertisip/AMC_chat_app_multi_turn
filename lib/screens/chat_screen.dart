@@ -77,8 +77,8 @@ class _ChatScreenState extends State<ChatScreen> {
       activeSessionID = currentLength;
       activePersonaID = selectedPersonaID;
       var session = ChatSession(
-        title: "Persona: $activePersonaID, Session: $activeSessionID",
-        // title: "",
+        // title: "Persona: $activePersonaID, Session: $activeSessionID",
+        title: "",
         messages: [],
         personaID: selectedPersonaID,
       );
@@ -155,6 +155,7 @@ class _ChatScreenState extends State<ChatScreen> {
           Content? content = response?.content;
           if (content != null) {
             session.addAIMessage(content);
+            _chatInputController.clear();
           }
         });
         // session.addAIMessage(
@@ -175,15 +176,13 @@ class _ChatScreenState extends State<ChatScreen> {
         switch (realStatusCode) {
           case 400:
             session.addErrorMessage(
-              "❌ Invalid Request: Check your parameters or prompt format.",
-            );
-            break;
-          case 401:
-          case 403:
-            session.addErrorMessage(
               "❌ Unauthorized: Your API Key is likely invalid or expired.",
             );
-            // Logic to open your Settings dialog automatically could go here
+            break;
+          case 403:
+            session.addErrorMessage(
+              "❌ Unauthorized: Your API key doesn't have the required permissions.",
+            );
             break;
           case 429:
             session.addErrorMessage(
@@ -194,6 +193,11 @@ class _ChatScreenState extends State<ChatScreen> {
           case 503:
             session.addErrorMessage(
               "❌ Server Error: Gemini is currently overloaded or down.",
+            );
+            break;
+          case 504:
+            session.addErrorMessage(
+              "❌ Deadline Exceeded: Your prompt is too large to be processed in time.",
             );
             break;
           default:
@@ -322,6 +326,17 @@ class _ChatScreenState extends State<ChatScreen> {
                                 activeSessionID = sID;
                               });
                               Navigator.pop(context);
+                            },
+                            onDelete: (pID, sID) {
+                              setState(() {
+                                var list = sessions[pID];
+                                if (list != null) {
+                                  list.removeAt(sID);
+                                  if (list.isEmpty) {
+                                    sessions.remove(pID);
+                                  }
+                                }
+                              });
                             },
                           );
                         }).toList(),
