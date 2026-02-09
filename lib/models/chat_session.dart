@@ -6,6 +6,7 @@ class ChatSession {
   String title;
   final List<ChatMessage> messages;
   final int personaID;
+  int sessionID;
 
   String get personaInstruction =>
       GeminiService.personas[personaID].instruction;
@@ -20,12 +21,14 @@ class ChatSession {
     required this.title,
     required this.messages,
     required this.personaID,
+    required this.sessionID,
   });
 
   Map<String, dynamic> toSaveJson() {
     return {
       'title': title,
       'personaID': personaID,
+      'sessionID': sessionID,
       'messages': messages.map((m) => m.toSaveJson()).toList(),
     };
   }
@@ -34,6 +37,7 @@ class ChatSession {
     return ChatSession(
       title: json['title'] ?? '',
       personaID: json['personaID'] ?? 0,
+      sessionID: json['sessionID'] ?? 0,
       messages:
           (json['messages'] as List?)
               ?.map((m) => ChatMessage.fromSaveJson(m))

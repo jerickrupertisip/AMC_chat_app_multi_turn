@@ -1,7 +1,7 @@
 import "package:chat_ui_lab/models/persona.dart";
 import "package:chat_ui_lab/models/chat_session.dart";
 import "package:chat_ui_lab/services/storage_service.dart";
-import "package:chat_ui_lab/widgets/chat_entry.dart";
+import "package:chat_ui_lab/widgets/chat_session_entry.dart";
 import "package:chat_ui_lab/widgets/empty_chat.dart";
 import "package:chat_ui_lab/widgets/settings_dialog.dart";
 import "package:flutter/material.dart";
@@ -81,6 +81,7 @@ class _ChatScreenState extends State<ChatScreen> {
         title: "",
         messages: [],
         personaID: selectedPersonaID,
+        sessionID: currentLength,
       );
       chatSessions.add(session);
       return session;
@@ -118,6 +119,7 @@ class _ChatScreenState extends State<ChatScreen> {
           session.addAIInstruction();
           session.addUserMessage(userPrompt);
           scrollToBottom();
+          _chatInputController.clear();
         });
 
         if (session.title.isEmpty) {
@@ -223,6 +225,36 @@ class _ChatScreenState extends State<ChatScreen> {
     selectedPersonaID = personaID ?? selectedPersonaID;
   }
 
+  void onChatSessionClick(int personaID, int sessionID) {
+    setState(() {
+      activePersonaID = personaID;
+      activeSessionID = sessionID;
+    });
+    Navigator.pop(context);
+  }
+
+  void recalculateSessionIndexes() {
+    sessions.forEach((personaID, sessions) {
+      sessions.asMap().forEach((sessionID, session) {
+        session.sessionID = sessionID;
+      });
+    });
+  }
+
+  void onChatSessionDelete(int personaID, int sessionID) {
+    setState(() {
+      var list = sessions[personaID];
+      if (list != null) {
+        list.removeAt(sessionID);
+        if (list.isEmpty) {
+          sessions.remove(personaID);
+          recalculateSessionIndexes();
+          storageService.saveSessions(sessions);
+        }
+      }
+    });
+  }
+
   void _initData() async {
     var sessions = await storageService.loadSessions();
     setState(() {
@@ -317,27 +349,10 @@ class _ChatScreenState extends State<ChatScreen> {
                           int sessionID = sessionEntry.key;
                           ChatSession session = sessionEntry.value;
                           return ChatSessionEntry(
-                            persona_id: personaID,
-                            session_id: sessionID,
+                            session: session,
                             title: session.title,
-                            onClick: (pID, sID) {
-                              setState(() {
-                                activePersonaID = pID;
-                                activeSessionID = sID;
-                              });
-                              Navigator.pop(context);
-                            },
-                            onDelete: (pID, sID) {
-                              setState(() {
-                                var list = sessions[pID];
-                                if (list != null) {
-                                  list.removeAt(sID);
-                                  if (list.isEmpty) {
-                                    sessions.remove(pID);
-                                  }
-                                }
-                              });
-                            },
+                            onClick: onChatSessionClick,
+                            onDelete: onChatSessionDelete,
                           );
                         }).toList(),
                       );

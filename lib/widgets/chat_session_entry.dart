@@ -1,3 +1,4 @@
+import 'package:chat_ui_lab/models/chat_session.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -6,15 +7,13 @@ class ChatSessionEntry extends StatefulWidget {
   final Function(int, int) onDelete;
 
   String title;
-  int persona_id;
-  int session_id;
+  ChatSession session;
 
   ChatSessionEntry({
-    required this.persona_id,
-    required this.session_id,
     required this.title,
     required this.onClick,
     required this.onDelete,
+    required this.session,
   });
 
   @override
@@ -27,13 +26,13 @@ class _ChatSessionEntryState extends State<ChatSessionEntry> {
     return ListTile(
       title: Text(widget.title),
       onTap: () {
-        widget.onClick(widget.persona_id, widget.session_id);
+        widget.onClick(widget.session.personaID, widget.session.sessionID);
       },
       // The action goes here
       trailing: IconButton(
         icon: const Icon(Icons.delete, color: Colors.redAccent),
         onPressed: () {
-          widget.onDelete(widget.persona_id, widget.session_id);
+          widget.onDelete(widget.session.personaID, widget.session.sessionID);
         },
       ),
     );
