@@ -9,7 +9,8 @@ import "package:flutter_gemini/flutter_gemini.dart";
 
 Future<void> main() async {
   await dotenv.load(fileName: ".env");
-  Gemini.init(apiKey: dotenv.env["API_KEY"] ?? "<API_KEY>");
+  print("apiKey: ${dotenv.env["API_KEY"]}");
+  Gemini.init(apiKey: dotenv.env["API_KEY"] ?? "<API_KEY>", enableDebugging: true);
   runApp(ChatApp());
 }
 

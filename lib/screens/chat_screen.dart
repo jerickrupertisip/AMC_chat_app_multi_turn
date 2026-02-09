@@ -74,8 +74,8 @@ class _ChatScreenState extends State<ChatScreen> {
       activeSessionID = currentLength;
       activePersonaID = selectedPersonaID;
       var session = ChatSession(
-        title: "Persona: $activePersonaID, Session: $activeSessionID",
-        // title: "",
+        // title: "Persona: $activePersonaID, Session: $activeSessionID",
+        title: "",
         messages: [],
         personaID: selectedPersonaID,
       );
@@ -98,47 +98,49 @@ class _ChatScreenState extends State<ChatScreen> {
           scrollToBottom();
         });
 
-        // if (session.title.isEmpty) {
-        //   var titleResponse = await Gemini.instance.prompt(
-        //     parts: [
-        //       TextPart(GeminiService.chatTitleInstruction),
-        //       TextPart(session.personaInstruction),
-        //       TextPart(userPrompt),
-        //     ],
-        //   );
-        //   setState(() {
-        //     Content? content = titleResponse?.content;
-        //     if (content != null) {
-        //       var title =
-        //           (content.parts?.map((part) {
-        //                     if (part is TextPart) {
-        //                       return part.text;
-        //                     }
-        //                     return "";
-        //                   }).join() ??
-        //                   "")
-        //               .trim();
-        //       if (title.isEmpty) {
-        //         session.title = "New Chat";
-        //       } else {
-        //         session.title = title;
-        //       }
-        //     }
-        //   });
-        // }
+        if (session.title.isEmpty) {
+          var titleResponse = await Gemini.instance.prompt(
+            parts: [
+              TextPart(GeminiService.chatTitleInstruction),
+              TextPart(session.personaInstruction),
+              TextPart(userPrompt),
+            ],
+          );
+          setState(() {
+            Content? content = titleResponse?.content;
+            if (content != null) {
+              var title =
+                  (content.parts?.map((part) {
+                            if (part is TextPart) {
+                              return part.text;
+                            }
+                            return "";
+                          }).join() ??
+                          "")
+                      .trim();
+              if (title.isEmpty) {
+                session.title = "New Chat";
+              } else {
+                session.title = title;
+              }
+            }
+          });
+        }
 
-        // var response = await Gemini.instance.chat(session.messages);
-        //
-        // setState(() {
-        //   Content? content = response?.content;
-        //   if (content != null) {
-        //     session.addAIMessage(content);
-        //   }
-        // });
-        session.addAIMessage(Content(
-          parts: [TextPart("AI Response")],
-          role: "model",
-        ));
+        var response = await Gemini.instance.chat(session.messages);
+
+        setState(() {
+          Content? content = response?.content;
+          if (content != null) {
+            session.addAIMessage(content);
+          }
+        });
+        // session.addAIMessage(Content(
+        //   parts: [TextPart("AI Response")],
+        //   role: "model",
+        // ));
+      } on GeminiException catch (e) {
+        session.addErrorMessage("❌ Error (${e.statusCode}): ${e.message}");
       } catch (e) {
         session.addErrorMessage("❌ Error: $e");
       } finally {

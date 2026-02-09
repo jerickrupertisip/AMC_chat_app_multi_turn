@@ -27,7 +27,7 @@ class ChatMessage extends Content {
 
   bool get isUserMessage => role == "user";
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toSaveJson() {
     return {
       'role': role,
       'isError': isError,
@@ -37,7 +37,7 @@ class ChatMessage extends Content {
     };
   }
 
-  factory ChatMessage.fromJson(Map<String, dynamic> json) {
+  factory ChatMessage.fromSaveJson(Map<String, dynamic> json) {
     return ChatMessage.fromParts(
       role: json['role'] ?? 'user',
       isError: json['isError'] ?? false,

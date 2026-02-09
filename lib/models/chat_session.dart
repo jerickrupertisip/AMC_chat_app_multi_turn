@@ -22,21 +22,21 @@ class ChatSession {
     required this.personaID,
   });
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toSaveJson() {
     return {
       'title': title,
       'personaID': personaID,
-      'messages': messages.map((m) => m.toJson()).toList(),
+      'messages': messages.map((m) => m.toSaveJson()).toList(),
     };
   }
 
-  factory ChatSession.fromJson(Map<String, dynamic> json) {
+  factory ChatSession.fromSaveJson(Map<String, dynamic> json) {
     return ChatSession(
       title: json['title'] ?? '',
       personaID: json['personaID'] ?? 0,
       messages:
           (json['messages'] as List?)
-              ?.map((m) => ChatMessage.fromJson(m))
+              ?.map((m) => ChatMessage.fromSaveJson(m))
               .toList() ??
           [],
     );
@@ -75,7 +75,7 @@ class ChatSession {
   void addErrorMessage(String message) {
     var content = ChatMessage.fromParts(
       role: "model",
-      parts: [TextPart(personaInstruction), TextPart(message)],
+      parts: [TextPart(message)],
       isError: true,
     );
     messages.add(content);

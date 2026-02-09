@@ -12,7 +12,7 @@ class StorageService {
     // JSON keys must be Strings, so we convert the int personaID keys
     final Map<String, dynamic> dataToSave = sessions.map(
       (key, value) =>
-          MapEntry(key.toString(), value.map((s) => s.toJson()).toList()),
+          MapEntry(key.toString(), value.map((s) => s.toSaveJson()).toList()),
     );
 
     // Encode the entire map to a single JSON string
@@ -36,7 +36,7 @@ class StorageService {
         final List<dynamic> list = value as List;
         return MapEntry(
           int.parse(key),
-          list.map((item) => ChatSession.fromJson(item)).toList(),
+          list.map((item) => ChatSession.fromSaveJson(item)).toList(),
         );
       });
     } catch (e) {
