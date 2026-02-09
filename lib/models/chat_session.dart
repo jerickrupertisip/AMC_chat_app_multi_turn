@@ -1,0 +1,58 @@
+import 'package:chat_ui_lab/models/chat_message.dart';
+import 'package:chat_ui_lab/services/gemini_service.dart';
+import 'package:flutter_gemini/flutter_gemini.dart';
+
+class ChatSession {
+  final String title;
+  final List<ChatMessage> messages;
+
+  List<ChatMessage> get visibleMessages => messages.where((m) {
+    return !m.isInstruction;
+  }).toList();
+
+  ChatSession({required this.title, required this.messages});
+
+  void removeErrorMessages() {
+    messages.removeWhere((element) {
+      return element.isError;
+    });
+  }
+
+  void addTemporaryMessage(String text, String role) {
+    messages.add(ChatMessage(text: text, role: role));
+  }
+
+  void removeMessageInstruction() {
+    messages.removeWhere((element) {
+      return element.isInstruction;
+    });
+  }
+
+  void addAIInstruction() {
+    var content = ChatMessage(
+      text: GeminiService.instruction,
+      role: "user",
+      isInstruction: true,
+    );
+    messages.add(content);
+  }
+
+  void addUserMessage(String message) {
+    var content = ChatMessage(text: message, role: "user");
+    messages.add(content);
+  }
+
+  void addErrorMessage(String message) {
+    var content = ChatMessage.fromParts(
+      role: "model",
+      parts: [TextPart(GeminiService.instruction), TextPart(message)],
+      isError: true,
+    );
+    messages.add(content);
+  }
+
+  void addAIMessage(Content content) {
+    ChatMessage msg = ChatMessage.fromContent(content: content);
+    messages.add(msg);
+  }
+}

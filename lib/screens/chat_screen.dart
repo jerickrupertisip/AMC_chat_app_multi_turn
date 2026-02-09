@@ -1,3 +1,5 @@
+import "package:chat_ui_lab/models/chat_session.dart";
+import "package:chat_ui_lab/widgets/empty_chat.dart";
 import "package:flutter/material.dart";
 import "package:chat_ui_lab/models/chat_message.dart";
 import "package:chat_ui_lab/widgets/message_bubble.dart";
@@ -13,13 +15,8 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final List<ChatMessage> messages = [];
+  ChatSession? activeSession = null;
 
-  ChatMessage get aiChatMessage => messages.last;
-
-  List<ChatMessage> get visibleMessages => messages.where((m) {
-    return !m.isInstruction;
-  }).toList();
   final ScrollController scrollController = ScrollController();
   bool _isLoading = false;
 
@@ -29,68 +26,68 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
-  void removeErrorMessages() {
-    setState(() {
-      messages.removeWhere((element) {
-        return element.isError;
-      });
-    });
-  }
-
-  void addTemporaryMessage(String text, String role) {
-    setState(() {
-      messages.add(ChatMessage(text: text, role: role));
-    });
-    scrollToBottom();
-  }
-
-  void removeMessageInstruction() {
-    setState(() {
-      messages.removeWhere((element) {
-        return element.isInstruction;
-      });
-    });
-  }
-
-  void addAIInstruction() {
-    setState(() {
-      var content = ChatMessage(
-        text: GeminiService.instruction,
-        role: "user",
-        isInstruction: true,
-      );
-      messages.add(content);
-    });
-    scrollToBottom();
-  }
-
-  void addUserMessage(String message) {
-    setState(() {
-      var content = ChatMessage(text: message, role: "user");
-      messages.add(content);
-    });
-    scrollToBottom();
-  }
-
-  void addErrorMessage(String message) {
-    setState(() {
-      var content = ChatMessage.fromParts(
-        role: "model",
-        parts: [TextPart(GeminiService.instruction), TextPart(message)],
-        isError: true,
-      );
-      messages.add(content);
-    });
-    scrollToBottom();
-  }
-
-  void addAIMessage(Content content) {
-    setState(() {
-      ChatMessage msg = ChatMessage.fromContent(content: content);
-      messages.add(msg);
-    });
-    scrollToBottom();
-  }
+  // void removeErrorMessages() {
+  //   setState(() {
+  //     messages.removeWhere((element) {
+  //       return element.isError;
+  //     });
+  //   });
+  // }
+  //
+  // void addTemporaryMessage(String text, String role) {
+  //   setState(() {
+  //     messages.add(ChatMessage(text: text, role: role));
+  //   });
+  //   scrollToBottom();
+  // }
+  //
+  // void removeMessageInstruction() {
+  //   setState(() {
+  //     messages.removeWhere((element) {
+  //       return element.isInstruction;
+  //     });
+  //   });
+  // }
+  //
+  // void addAIInstruction() {
+  //   setState(() {
+  //     var content = ChatMessage(
+  //       text: GeminiService.instruction,
+  //       role: "user",
+  //       isInstruction: true,
+  //     );
+  //     messages.add(content);
+  //   });
+  //   scrollToBottom();
+  // }
+  //
+  // void addUserMessage(String message) {
+  //   setState(() {
+  //     var content = ChatMessage(text: message, role: "user");
+  //     messages.add(content);
+  //   });
+  //   scrollToBottom();
+  // }
+  //
+  // void addErrorMessage(String message) {
+  //   setState(() {
+  //     var content = ChatMessage.fromParts(
+  //       role: "model",
+  //       parts: [TextPart(GeminiService.instruction), TextPart(message)],
+  //       isError: true,
+  //     );
+  //     messages.add(content);
+  //   });
+  //   scrollToBottom();
+  // }
+  //
+  // void addAIMessage(Content content) {
+  //   setState(() {
+  //     ChatMessage msg = ChatMessage.fromContent(content: content);
+  //     messages.add(msg);
+  //   });
+  //   scrollToBottom();
+  // }
 
   void scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -105,28 +102,40 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> handleSend(String user_prompt) async {
-    try {
-      setState(() => _isLoading = true);
+    activeSession ??= new ChatSession(title: "1 Chat", messages: []);
 
-      removeErrorMessages();
-      addAIInstruction();
-      addUserMessage(user_prompt);
+    ChatSession? session = activeSession;
+    if (session != null) {
+      try {
+        setState(() {
+          _isLoading = true;
+          session.removeErrorMessages();
+          session.addAIInstruction();
+          session.addUserMessage(user_prompt);
+          scrollToBottom();
+        });
 
-      var v = await Gemini.instance.chat(messages);
-      if (content != null) {
-        addAIMessage(content);
+        var response = await Gemini.instance.chat(session.messages);
+
+        setState(() {
+          Content? content = response?.content;
+          if (content != null) {
+            session.addAIMessage(content);
+          }
+
+          session.removeMessageInstruction();
+        });
+      } catch (e) {
+        session.addErrorMessage("❌ Error: $e");
+      } finally {
+        setState(() => _isLoading = false);
       }
-
-      removeMessageInstruction();
-    } catch (e) {
-      addErrorMessage("❌ Error: $e");
-    } finally {
-      setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    ChatSession? session = activeSession;
     return Scaffold(
       appBar: AppBar(
         title: const Text("🤖 AI Chat - Multi-Turn Week 4"),
@@ -135,26 +144,13 @@ class _ChatScreenState extends State<ChatScreen> {
       body: Column(
         children: [
           Expanded(
-            child: messages.isEmpty
-                ? const Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.chat, size: 100, color: Colors.grey),
-                        SizedBox(height: 16),
-                        Text("Start chatting!"),
-                        Text(
-                          "Multi-turn means Gemini remembers context 🧠",
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  )
+            child: (session == null || session.messages.isEmpty)
+                ? EmptyChat()
                 : ListView.builder(
                     controller: scrollController,
-                    itemCount: visibleMessages.length,
+                    itemCount: session.visibleMessages.length,
                     itemBuilder: (context, index) {
-                      final msg = visibleMessages[index];
+                      final msg = session.visibleMessages[index];
                       return MessageBubble(message: msg);
                     },
                   ),
@@ -176,6 +172,9 @@ class _ChatScreenState extends State<ChatScreen> {
           // Input
           InputBar(onSendMessage: handleSend),
         ],
+      ),
+      drawer: Drawer(
+        child: ListView(padding: EdgeInsets.zero, children: []),
       ),
     );
   }
