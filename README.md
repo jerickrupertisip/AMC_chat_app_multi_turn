@@ -1,4 +1,4 @@
-# chat_ui_lab
+# ai_gemini_chat
 
 A new Flutter project.
 

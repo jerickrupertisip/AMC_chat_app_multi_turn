@@ -1,4 +1,4 @@
-package com.example.chat_ui_lab
+package com.example.ai_gemini_chat
 
 import io.flutter.embedding.android.FlutterActivity
 

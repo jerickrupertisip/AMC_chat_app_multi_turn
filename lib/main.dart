@@ -22,7 +22,7 @@ class ChatApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: "Chat UI App",
+      title: "AI Gemini Chat",
       // theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
       home: ChatScreen(),
       // theme: tokyoNightTheme,

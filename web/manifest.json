@@ -1,6 +1,6 @@
 {
-    "name": "chat_ui_lab",
-    "short_name": "chat_ui_lab",
+    "name": "ai_gemini_chat",
+    "short_name": "ai_gemini_chat",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
