@@ -1,4 +1,6 @@
+import "package:chat_ui_lab/models/Persona.dart";
 import "package:chat_ui_lab/models/chat_session.dart";
+import "package:chat_ui_lab/widgets/chat_entry.dart";
 import "package:chat_ui_lab/widgets/empty_chat.dart";
 import "package:flutter/material.dart";
 import "package:chat_ui_lab/models/chat_message.dart";
@@ -15,7 +17,12 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  ChatSession? activeSession = null;
+  List<ChatSession> sessions = [];
+  int activeSessionID = -1;
+
+  ChatSession? get activeSession =>
+      activeSessionID == -1 ? null : sessions[activeSessionID];
+  int selectedPersonaID = 0;
 
   final ScrollController scrollController = ScrollController();
   bool _isLoading = false;
@@ -25,69 +32,6 @@ class _ChatScreenState extends State<ChatScreen> {
     scrollController.dispose();
     super.dispose();
   }
-
-  // void removeErrorMessages() {
-  //   setState(() {
-  //     messages.removeWhere((element) {
-  //       return element.isError;
-  //     });
-  //   });
-  // }
-  //
-  // void addTemporaryMessage(String text, String role) {
-  //   setState(() {
-  //     messages.add(ChatMessage(text: text, role: role));
-  //   });
-  //   scrollToBottom();
-  // }
-  //
-  // void removeMessageInstruction() {
-  //   setState(() {
-  //     messages.removeWhere((element) {
-  //       return element.isInstruction;
-  //     });
-  //   });
-  // }
-  //
-  // void addAIInstruction() {
-  //   setState(() {
-  //     var content = ChatMessage(
-  //       text: GeminiService.instruction,
-  //       role: "user",
-  //       isInstruction: true,
-  //     );
-  //     messages.add(content);
-  //   });
-  //   scrollToBottom();
-  // }
-  //
-  // void addUserMessage(String message) {
-  //   setState(() {
-  //     var content = ChatMessage(text: message, role: "user");
-  //     messages.add(content);
-  //   });
-  //   scrollToBottom();
-  // }
-  //
-  // void addErrorMessage(String message) {
-  //   setState(() {
-  //     var content = ChatMessage.fromParts(
-  //       role: "model",
-  //       parts: [TextPart(GeminiService.instruction), TextPart(message)],
-  //       isError: true,
-  //     );
-  //     messages.add(content);
-  //   });
-  //   scrollToBottom();
-  // }
-  //
-  // void addAIMessage(Content content) {
-  //   setState(() {
-  //     ChatMessage msg = ChatMessage.fromContent(content: content);
-  //     messages.add(msg);
-  //   });
-  //   scrollToBottom();
-  // }
 
   void scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -102,7 +46,16 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> handleSend(String user_prompt) async {
-    activeSession ??= new ChatSession(title: "1 Chat", messages: []);
+    if (activeSessionID < 0 || sessions.isEmpty) {
+      sessions.add(
+        ChatSession(
+          title: "${sessions.length} Chat [$selectedPersonaID]",
+          messages: [],
+          persona_id: selectedPersonaID,
+        ),
+      );
+      activeSessionID = sessions.length - 1;
+    }
 
     ChatSession? session = activeSession;
     if (session != null) {
@@ -115,14 +68,18 @@ class _ChatScreenState extends State<ChatScreen> {
           scrollToBottom();
         });
 
-        var response = await Gemini.instance.chat(session.messages);
-
-        setState(() {
-          Content? content = response?.content;
-          if (content != null) {
-            session.addAIMessage(content);
-          }
-        });
+        // var response = await Gemini.instance.chat(session.messages);
+        //
+        // setState(() {
+        //   Content? content = response?.content;
+        //   if (content != null) {
+        //     session.addAIMessage(content);
+        //   }
+        // });
+        session.addAIMessage(Content(
+          role: "model",
+          parts: [TextPart("AI Response")],
+        ));
       } catch (e) {
         session.addErrorMessage("❌ Error: $e");
       } finally {
@@ -130,6 +87,10 @@ class _ChatScreenState extends State<ChatScreen> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  void handlePersonaClick(int personaID) {
+    selectedPersonaID = personaID;
   }
 
   @override
@@ -144,7 +105,7 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           Expanded(
             child: (session == null || session.messages.isEmpty)
-                ? EmptyChat()
+                ? EmptyChat(onPersonaClicked: handlePersonaClick)
                 : ListView.builder(
                     controller: scrollController,
                     itemCount: session.visibleMessages.length,
@@ -173,7 +134,52 @@ class _ChatScreenState extends State<ChatScreen> {
         ],
       ),
       drawer: Drawer(
-        child: ListView(padding: EdgeInsets.zero, children: []),
+        child: ListView(
+          padding: EdgeInsets.all(12),
+          children: [
+            ListTile(
+              leading: Icon(Icons.add),
+              title: Text("New Chat"),
+              onTap: () {
+                setState(() {
+                  activeSessionID = -1;
+                });
+              },
+            ),
+            // Padding(padding: EdgeInsets.all(12), child: Text("New Chat", on)),
+            ...GeminiService.personas.asMap().entries.map((value) {
+              int id = value.key;
+              Persona persona = value.value;
+              List<ChatSession> personaSessions = sessions.where((session) {
+                return session.persona_id == id;
+              }).toList();
+
+              return ExpansionTile(
+                title: Text(
+                  persona.name,
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                children: personaSessions.asMap().entries.map((value) {
+                  int sessionID = value.key;
+                  print("Session ID: $sessionID");
+                  ChatSession session = value.value;
+                  return ChatEntry(
+                    session_id: sessionID,
+                    title: session.title,
+                    onClick: (id) {
+                      print("clicked Session ID: $id");
+                      if (activeSessionID != id) {
+                        setState(() {
+                          activeSessionID = id;
+                        });
+                      }
+                    },
+                  );
+                }).toList(),
+              );
+            }).toList(),
+          ],
+        ),
       ),
     );
   }

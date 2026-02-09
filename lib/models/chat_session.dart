@@ -5,12 +5,22 @@ import 'package:flutter_gemini/flutter_gemini.dart';
 class ChatSession {
   final String title;
   final List<ChatMessage> messages;
+  final int persona_id;
+
+  String get personaInstruction =>
+      GeminiService.personas[persona_id].instruction;
+  String get personaName =>
+      GeminiService.personas[persona_id].name;
 
   List<ChatMessage> get visibleMessages => messages.where((m) {
     return !m.isInstruction;
   }).toList();
 
-  ChatSession({required this.title, required this.messages});
+  ChatSession({
+    required this.title,
+    required this.messages,
+    required this.persona_id,
+  });
 
   void removeErrorMessages() {
     messages.removeWhere((element) {
@@ -30,7 +40,7 @@ class ChatSession {
 
   void addAIInstruction() {
     var content = ChatMessage(
-      text: GeminiService.instruction,
+      text: personaInstruction,
       role: "user",
       isInstruction: true,
     );
@@ -45,7 +55,7 @@ class ChatSession {
   void addErrorMessage(String message) {
     var content = ChatMessage.fromParts(
       role: "model",
-      parts: [TextPart(GeminiService.instruction), TextPart(message)],
+      parts: [TextPart(personaInstruction), TextPart(message)],
       isError: true,
     );
     messages.add(content);
