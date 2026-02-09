@@ -122,12 +122,11 @@ class _ChatScreenState extends State<ChatScreen> {
           if (content != null) {
             session.addAIMessage(content);
           }
-
-          session.removeMessageInstruction();
         });
       } catch (e) {
         session.addErrorMessage("❌ Error: $e");
       } finally {
+        session.removeMessageInstruction();
         setState(() => _isLoading = false);
       }
     }
